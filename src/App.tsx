@@ -286,6 +286,9 @@ function BuildTab() {
 git clone https://github.com/example/shakal-camera.git
 cd shakal-camera
 
+# Настроить Gradle wrapper (один раз)
+chmod +x setup-wrapper.sh && ./setup-wrapper.sh
+
 # Собрать debug APK
 ./gradlew assembleDebug
 
@@ -299,16 +302,32 @@ cd shakal-camera
 
       <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
         <h2 className="text-xl font-bold text-amber-400 mb-4">🚀 CI/CD (GitHub Actions)</h2>
-        <div className="font-mono text-sm text-gray-300 bg-gray-900 rounded-lg p-4 overflow-x-auto">
-          <pre>{`# .github/workflows/build.yml
-# Триггер: push tag v*
-# Секреты репозитория:
-#   KEYSTORE_BASE64    — base64 от keystore файла
-#   KEYSTORE_PASSWORD  — пароль keystore
-#   KEY_ALIAS          — alias ключа
-#   KEY_PASSWORD       — пароль ключа
-#
-# Результат: release APK приложен к GitHub Release`}</pre>
+        <div className="space-y-4">
+          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-2 py-0.5 bg-blue-900 text-blue-300 rounded text-xs font-mono">debug.yml</span>
+              <span className="text-gray-400 text-sm">Debug Build</span>
+            </div>
+            <div className="font-mono text-xs text-gray-300">
+              <pre>{`Триггеры: push в main, workflow_dispatch
+Среда: ubuntu-latest, JDK 17 (Temurin)
+Команда: ./gradlew assembleDebug
+Артефакт: shakal-camera-debug (30 дней)
+Авто-генерация gradle-wrapper.jar если отсутствует`}</pre>
+            </div>
+          </div>
+          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-2 py-0.5 bg-green-900 text-green-300 rounded text-xs font-mono">build.yml</span>
+              <span className="text-gray-400 text-sm">Release Build</span>
+            </div>
+            <div className="font-mono text-xs text-gray-300">
+              <pre>{`Триггер: push tag v*
+Секреты: KEYSTORE_BASE64, KEYSTORE_PASSWORD,
+         KEY_ALIAS, KEY_PASSWORD
+Результат: release APK → GitHub Release`}</pre>
+            </div>
+          </div>
         </div>
       </div>
 
