@@ -23,6 +23,24 @@ gradle wrapper --gradle-version 8.9
 chmod +x gradlew
 ```
 
+### Генерация debug keystore
+
+Для консистентной подписи debug-сборок:
+
+```bash
+keytool -genkeypair -v \
+  -keystore app/debug.keystore \
+  -storepass android \
+  -alias androiddebugkey \
+  -keypass android \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000 \
+  -dname "CN=Android Debug,O=Android,C=US"
+```
+
+Или запустите `./setup-wrapper.sh` — он создаст keystore автоматически.
+
 ### Сборка
 
 ```bash
@@ -30,6 +48,18 @@ chmod +x gradlew
 ```
 
 APK: `app/build/outputs/apk/debug/app-debug.apk`
+
+## CI/CD
+
+### Debug Build (debug.yml)
+- **Триггеры:** push в `main`, `workflow_dispatch`
+- **Результат:** APK публикуется в Release `latest-debug`
+- **Подпись:** фиксированный debug-ключ (можно обновлять поверх)
+
+### Release Build (build.yml)
+- **Триггер:** push тега `v*`
+- **С секретами:** подписанный release APK
+- **Без секретов:** debug APK с пометкой
 
 ## Структура коммитов
 
@@ -48,18 +78,7 @@ refactor: рефакторинг без изменения функционал�
 3. Убедитесь что `./gradlew assembleDebug` проходит
 4. Откройте PR в `main`
 5. Дождитесь зелёного CI (workflow `debug.yml`)
-
-## CI/CD
-
-### Debug Build (`debug.yml`)
-- Триггер: push в `main`, ручной запуск
-- Собирает debug APK
-- Загружает как artifact `shakal-camera-debug`
-
-### Release Build (`build.yml`)
-- Триггер: push тега `v*`
-- Собирает release APK с подписью из secrets
-- Создаёт GitHub Release
+6. После мёрджа автоматически появится релиз `latest-debug`
 
 ## Лицензия
 

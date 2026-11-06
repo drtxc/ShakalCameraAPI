@@ -25,9 +25,9 @@ local.properties
 .DS_Store
 Thumbs.db
 
-# Signing
+# Signing — release keystore is secret, debug keystore is committed
 *.jks
-*.keystore
+!app/debug.keystore
 
 # Node (for web docs)
 node_modules/

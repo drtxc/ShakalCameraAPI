@@ -2,7 +2,14 @@
 
 Android-камера, которая снимает сразу шакальное фото и видео.
 
-![Screenshot placeholder](docs/screenshots/preview.png)
+[![Debug Build](https://github.com/drtxc/ShakalCameraAPI/actions/workflows/debug.yml/badge.svg)](https://github.com/drtxc/ShakalCameraAPI/actions/workflows/debug.yml)
+
+## ⬇️ Скачать
+
+| Версия | Ссылка |
+|--------|--------|
+| **Стабильная** (release) | [![Latest Release](https://img.shields.io/github/v/release/drtxc/ShakalCameraAPI?label=download)](../../releases/latest) |
+| **Свежая сборка** (debug, из main) | [![Latest Debug](https://img.shields.io/github/v/release/drtxc/ShakalCameraAPI?include_prereleases&label=debug)](../../releases/tag/latest-debug) |
 
 ## О приложении
 
@@ -39,9 +46,10 @@ Android-камера, которая снимает сразу шакально�
 ## Структура проекта
 
 ```
-ШакалCamera/
+ShakalCamera/
 ├── app/                          # UI модуль (Jetpack Compose)
 │   ├── build.gradle.kts
+│   ├── debug.keystore            # Фиксированный debug-ключ
 │   └── src/main/
 │       ├── AndroidManifest.xml
 │       ├── java/.../ui/          # Compose UI, разрешения, MediaStore
@@ -56,7 +64,9 @@ Android-камера, которая снимает сразу шакально�
 ├── README.md
 ├── TESTING.md
 ├── fastlane/metadata/android/    # F-Droid метаданные
-└── .github/workflows/build.yml   # CI/CD
+└── .github/workflows/
+    ├── debug.yml                 # Debug-сборка → Release (latest-debug)
+    └── build.yml                 # Release-сборка на тег v*
 ```
 
 ## Сборка
@@ -70,20 +80,39 @@ Android-камера, которая снимает сразу шакально�
 ### Локальная сборка
 
 ```bash
-# Debug APK
+# Клонировать репозиторий
+git clone https://github.com/drtxc/ShakalCameraAPI.git
+cd ShakalCameraAPI
+
+# Настроить Gradle wrapper (один раз)
+chmod +x setup-wrapper.sh && ./setup-wrapper.sh
+
+# Собрать debug APK
 ./gradlew assembleDebug
 
-# Release APK (нужна подпись)
+# APK: app/build/outputs/apk/debug/app-debug.apk
+
+# Собрать release (нужна подпись)
 ./gradlew assembleRelease
 ```
 
-APK: `app/build/outputs/apk/debug/app-debug.apk`
-
 ### CI/CD
 
-GitHub Actions собирает release APK на теге `v*` и прикладывает к GitHub Release.
+#### Debug Build (`debug.yml`)
+- **Триггеры:** push в `main`, `workflow_dispatch`
+- **Результат:** APK публикуется в [Release `latest-debug`](../../releases/tag/latest-debug)
+- **Подпись:** фиксированный debug-ключ (можно обновлять поверх)
+- **Артефакт:** также доступен в Actions → Artifacts
 
-Секреты репозитория:
+#### Release Build (`build.yml`)
+- **Триггер:** push тега `v*`
+- **С секретами:** собирает подписанный release APK
+- **Без секретов:** собирает debug APK с пометкой в релизе
+- **Результат:** [Latest Release](../../releases/latest)
+
+### Секреты для release-сборки
+
+Для подписанных release-сборок добавьте в Settings → Secrets:
 - `KEYSTORE_BASE64` — base64 от keystore файла
 - `KEYSTORE_PASSWORD` — пароль keystore
 - `KEY_ALIAS` — alias ключа
@@ -112,3 +141,7 @@ GPL-3.0. См. файл [LICENSE](LICENSE).
 ✅ Нет разрешения INTERNET  
 ✅ Все зависимости из Maven Central / Google Maven  
 ✅ Лицензия GPL-3.0  
+
+## Репозиторий
+
+https://github.com/drtxc/ShakalCameraAPI

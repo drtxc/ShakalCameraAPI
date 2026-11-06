@@ -1,61 +1,86 @@
-# PR: Add debug build workflow and Gradle wrapper files
+# PR: Debug build → Releases + фиксированный debug-ключ
 
 ## Summary
 
-Добавляет CI для автоматической сборки debug APK и файлы Gradle wrapper.
+1. Gradle wrapper и debug keystore генерируются в CI автоматически
+2. Каждая сборка debug попадает в GitHub Release `latest-debug`
+3. Release-сборка на тегах `v*` с fallback на debug при отсутствии секретов
+4. Фиксированный debug-ключ для возможности обновления поверх
 
 ## Changes
 
 ### `.github/workflows/debug.yml`
-- Триггеры: push в `main` + `workflow_dispatch` (ручной запуск)
-- Ubuntu Latest, JDK 17 (Temurin), `gradle/actions/setup-gradle@v4`
-- Автоматическая генерация `gradle-wrapper.jar` если отсутствует
-- Загрузка APK через `actions/upload-artifact@v4` как `shakal-camera-debug`
-- Retention: 30 дней
+- Триггеры: push в `main`, `workflow_dispatch`
+- `permissions: contents: write`
+- Авто-генерация `gradle-wrapper.jar` и `debug.keystore` если отсутствуют
+- Переименование APK: `ShakalCamera-debug-<sha>.apk`
+- Удаление старого релиза `latest-debug` перед публикацией нового
+- Публикация через `softprops/action-gh-release@v2`:
+  - `tag_name: latest-debug`, `prerelease: true`, `make_latest: false`
+  - Body: sha коммита, дата, сообщение
+- Дополнительно: `actions/upload-artifact@v4`
 
-### `gradlew` (Unix)
-- Полноценный POSIX shell script от Gradle
-- Поддержка Cygwin, MSYS, macOS, AIX
-- Автоматический поиск JAVA_HOME
-- Увеличение file descriptor limit
+### `.github/workflows/build.yml`
+- Триггер: push тега `v*`
+- Если секреты подписи заданы → release APK в релиз тега (`prerelease: false`, `make_latest: true`)
+- Если секретов нет → debug APK в релиз тега с пометкой и `prerelease: true`
+- Авто-генерация wrapper
 
-### `gradlew.bat` (Windows)
-- Стандартный batch script от Gradle
-- Поиск java.exe в PATH или JAVA_HOME
+### `app/build.gradle.kts`
+- `signingConfigs.debug` → `app/debug.keystore`
+- `buildTypes.debug.signingConfig = signingConfigs.debug`
+
+### `.gitignore`
+- `!app/debug.keystore` — debug keystore коммитится
+- `*.jks` — release keystore игнорируется
 
 ### `setup-wrapper.sh`
-- Скрипт для разработчиков: скачивает `gradle-wrapper.jar` и выставляет права
+- Скачивает `gradle-wrapper.jar` или подсказывает как сгенерировать
+- Генерирует `debug.keystore` через keytool
+- Делает `gradlew` исполняемым
 
-## Before merge — manual steps required
-
-Поскольку `gradle-wrapper.jar` — бинарный файл, его нужно сгенерировать локально:
-
-```bash
-# Вариант 1: через setup script
-chmod +x setup-wrapper.sh
-./setup-wrapper.sh
-
-# Вариант 2: через Gradle (если установлен глобально)
-gradle wrapper --gradle-version 8.9
-
-# Сделать gradlew исполняемым
-chmod +x gradlew
-git update-index --chmod=+x gradlew
-
-# Закоммитить wrapper jar
-git add gradle/wrapper/gradle-wrapper.jar
-git commit -m "chore: add gradle-wrapper.jar"
-```
+### `README.md`
+- Ссылки на `drtxc/ShakalCameraAPI`
+- Таблица скачивания: stable release + latest-debug
+- Бейдж CI
 
 ## CI behavior
 
-Workflow `debug.yml` работает в двух режимах:
-1. **Если `gradle-wrapper.jar` есть в репо** — использует его напрямую
-2. **Если jar отсутствует** — генерирует через `gradle wrapper` (требует установленный Gradle на runner, что обеспечивается `gradle/actions/setup-gradle@v4`)
+### Debug (push в main)
+```
+checkout → setup-java → setup-gradle → generate wrapper → generate keystore
+→ assembleDebug → rename APK → upload artifact
+→ delete old release → create new release (latest-debug)
+```
+
+### Release (push tag v*)
+```
+checkout → setup-java → setup-gradle → generate wrapper
+→ check secrets → [if secrets: decode keystore → assembleRelease]
+                  [if no secrets: assembleDebug]
+→ rename APK → create release
+```
+
+## Before merge — для локальной разработки
+
+```bash
+# Настроить wrapper и keystore
+chmod +x setup-wrapper.sh && ./setup-wrapper.sh
+
+# Или вручную:
+gradle wrapper --gradle-version 8.9
+chmod +x gradlew
+keytool -genkeypair -v -keystore app/debug.keystore \
+  -storepass android -alias androiddebugkey -keypass android \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -dname "CN=Android Debug,O=Android,C=US"
+```
 
 ## Testing
 
-- [ ] Push в main триггерит workflow
-- [ ] Ручной запуск через Actions → Debug Build → Run workflow
-- [ ] Артефакт `shakal-camera-debug` появляется в Artifacts
-- [ ] APK устанавливается на устройство
+- [ ] Push в main → появляется релиз `latest-debug` с APK
+- [ ] Ручной запуск workflow_dispatch → появляется релиз
+- [ ] Старый релиз удаляется, новый содержит свежий APK
+- [ ] APK устанавливается и обновляется поверх (тот же ключ)
+- [ ] Push тега v1.0.0 → появляется релиз с тегом
+- [ ] Артефакт доступен в Actions → Artifacts
