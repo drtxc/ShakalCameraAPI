@@ -1,0 +1,36 @@
+# Built files
+*.iml
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+build/
+
+# Gradle
+.gradle/
+local.properties
+
+# IDE
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Signing — release keystore is secret, debug keystore is committed
+*.jks
+!app/debug.keystore
+
+# Node (for web docs)
+node_modules/
+dist/
+.next/
+*.log

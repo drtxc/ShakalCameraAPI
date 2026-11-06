@@ -1,0 +1,15 @@
+ShakalCamera — a camera that instantly produces "shakal" quality photos and videos.
+
+11 levels of degradation — from "almost decent" (1280×720) to "4 shades of gray with Bayer dithering" (128×112).
+
+Making your photos beautiful.
+
+Features:
+• Live preview with effects (OpenGL ES 3.0)
+• Photo and video with degraded quality
+• Front/back camera switch
+• Level slider 1–10 and 12
+• Save to gallery
+• Remember settings
+
+No ads. No analytics. No internet. Free software (GPL-3.0).
